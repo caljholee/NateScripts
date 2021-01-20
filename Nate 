@@ -1,0 +1,43 @@
+import io
+import os
+import pandas as pd 
+from google.cloud import vision
+from google.cloud.vision import types
+
+#Replace 'Nate-e5be74c2cdea.json' to the path of the JSON file that contains your service account key. 
+client = vision.ImageAnnotatorClient.from_service_account_json('Nate-e5be74c2cdea.json')
+
+#Returns 1-10 Description 1-10 Sacore 1-most accurate, 10-least accurate 
+def label(path_name):
+    file_name = os.path.abspath(path_name)
+    with io.open(file_name, 'rb') as image_file:
+        content = image_file.read()
+    image = types.Image(content=content)
+    response = client.label_detection(image=image)
+    labels = response.label_annotations    
+    label_description = [label.description for label in labels]
+    label_score = [label.score for label in labels]
+    label_description.extend(label_score)
+    return label_description 
+
+#Automates the labelling for a list of path files 
+index_name = {}
+features = []
+column_name = {0: 'Name1', 1:'Name2', 2:'Name3', 3: 'Name4', 4:'Name5', 5:'Name6', 6:'Name7', 7:'Name8', 8:'Name9', 9:'Name10', 10:'Score1', 11:'Score2', 12:'Score3', 13:'Score4',14:'Score5',15:'Score6', 16:'Score6',17:'Score7',18:'Score8',19:'Score9',20:'Score10'}
+def mass_label(folder_name):
+    filenames = os.listdir(folder_name)
+    path_files = [os.path.join(folder_name, filenames[i]) for i in range(len(filenames))]
+    i = 0 
+    while i < len(path_files):
+        index_name[i] = path_files[i]
+        features.append(label(path_files[i]))
+        i += 1 
+    df = pd.DataFrame(features).rename(index=index_name,columns=column_name)
+    return df 
+
+#Example Code 
+#Replace 'Images' with name of folder in desktop containing images 
+a = mass_label("Test")
+print(a)
+#a.to_csv(r'/Users/bots/Desktop/test.csv')
+
